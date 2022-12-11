@@ -1,0 +1,38 @@
+.pos 0
+    irmovq pino, %rbp
+    irmovq pino, %rsp
+    
+main:
+    irmovq $0, %rcx  # count
+    irmovq $1, %r8   # vakio
+    irmovq $0, %rsi  # arvo
+    irmovq $5,%rbx   # pinoon talletettava arvo
+    pushq %rbx       # rekisteriarvoon pinoon
+    irmovq $4,%rbx
+    pushq %rbx
+    irmovq $3,%rbx
+    pushq %rbx
+
+loop:
+    rrmovq %rbp, %r9
+    popq %rbx
+    addq %r8, %rcx
+    addq %rbx, %rsi
+    subq %rsp, %r9
+    jg loop
+
+call jakolasku
+
+.pos 0x100
+jakolasku:
+    irmovq $-1, %rax
+    irmovq $1, %r11 
+loop1:
+    addq %r11, %rax
+    subq %rcx, %rsi
+    jge loop1
+    ret
+
+
+.pos 0x400
+pino:

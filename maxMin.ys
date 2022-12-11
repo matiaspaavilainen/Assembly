@@ -1,0 +1,49 @@
+.pos 0
+    irmovq pino, %rbp
+    irmovq pino, %rsp
+    
+main:
+    irmovq $1, %rsi  # pienin
+    irmovq $0, %rdi  # suurin
+    irmovq $5, %rbx   # pinoon talletettava arvo
+    pushq %rbx       # rekisteriarvoon pinoon
+    irmovq $5, %rbx
+    pushq %rbx
+    irmovq $7, %rbx
+    pushq %rbx
+    irmovq $57, %rbx
+    pushq %rbx
+    irmovq $6, %rbx
+    pushq %rbx
+    irmovq $23, %rbx
+    pushq %rbx
+    irmovq $3, %rbx
+    pushq %rbx
+
+loop:
+    rrmovq %rbp, %r8  # tarkistetaan ollaanko pinon lopussa
+    subq %rsp, %r8    # jos on jmp end
+    je end
+    popq %rbx
+    rrmovq %rdi, %r9 
+    subq %rbx, %r9
+    jl great
+    rrmovq %rsi, %r10
+    subq %rbx, %rcx
+    jg small
+    jmp loop
+
+great:
+    rrmovq %rbx, %rcx # otetaan vanha talteen
+    rrmovq %rbx, %rdi
+    jmp loop
+
+small:
+    rrmovq %rbx, %rcx # otetaan vanha talteen
+    rrmovq %rbx, %rsi
+    jmp loop
+    
+end:
+    
+.pos 0x400
+pino:

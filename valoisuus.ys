@@ -1,0 +1,19 @@
+main:
+    irmovq $0xF000, %r14 # e-maski
+    irmovq $0xFFF, %rax # r-maski
+    irmovq $12, %rdx #count
+    irmovq $1, %rcx #vakio
+    irmovq $4096, %rdx #jakaja 2^12 koska shiftataan 12 kertaa oikealle
+    irmovq $-1 , %rbx
+    
+    
+    andq %r13, %r14 # E
+    
+loop:
+    addq %rcx, %rbx
+    subq %rdx, %r14
+    jge loop
+    
+    rrmovq %rbx, %r14
+    andq %rax, %r13 # R
+    

@@ -1,0 +1,61 @@
+main:
+    irmovq pino, %rbp
+    irmovq pino, %rsp
+    irmovq $0, %rax # vastaus
+    irmovq $8, %rdi
+    irmovq array, %rsi # alku
+    irmovq $1, %rdx
+
+loop:
+    irmovq $0x0380, %r8 # loppu
+    mrmovq (%rsi), %rbx # siirretään arraystä arvo rbx
+    andq %r11, %rbx # and muistipaikasta ja kerrottavasta
+    je ohitus
+    rrmovq %r12, %r13
+    call kerto # jos ei nolla, tehdään lasku
+    pushq %r9
+    ohitus:
+    addq %rdi, %rsi # kasvatetaan muistipaikkaa 8
+    subq %rsi, %r8 # ollaanko taulukon lopussa
+    jg loop
+    jmp loop1
+
+loop1:
+    popq %r13
+    addq %r13, %rax
+    rrmovq %rbp, %r10  # tarkistetaan ollaanko pinon lopussa
+    subq %rsp, %r10
+    jne loop1
+
+.pos 0x200
+pino:
+
+
+.pos 0x300
+array:
+    .quad 0x8000
+    .quad 0x4000
+    .quad 0x2000
+    .quad 0x1000
+    .quad 0x800
+    .quad 0x400
+    .quad 0x200
+    .quad 0x100
+    .quad 0x80
+    .quad 0x40
+    .quad 0x20
+    .quad 0x10
+    .quad 0x8
+    .quad 0x4
+    .quad 0x2
+    .quad 0x1
+    .quad 0x0
+
+.pos 0x400
+kerto:
+irmovq $0, %r9
+    loop2:
+    addq %rbx, %r9
+    subq %rdx, %r13
+    jne loop2
+    ret
