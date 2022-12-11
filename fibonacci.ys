@@ -21,7 +21,6 @@
 main:
    irmovq pino, %rbp
    irmovq pino, %rsp      # pino alustus
-
    irmovq $8, %r13        # vakio 8 taulukkoa varten
    irmvoq $4, %r10        # vakio
    irmovq $5, %r9         # vakio
