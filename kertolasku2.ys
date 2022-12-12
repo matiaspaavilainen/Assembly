@@ -14,7 +14,7 @@ loop:
     je ohitus       # jos ei olla 1 kohdalla hypätään ohi
     irmovq $1, %rax
     subq %rbx, %rax
-    je väli         # jos ollaan 1 kohdalla, mutta count -1 hypätään ohi
+    je vali         # jos ollaan 1 kohdalla, mutta count -1 hypätään ohi
     call kerto      # jos ollaan 1 kohdalla lasketaan
     pushq %rbx
     ohitus:
@@ -32,7 +32,7 @@ loop1:
     jne loop1
     halt
 
-väli:
+vali:
     pushq %r12
     jmp ohitus
     
