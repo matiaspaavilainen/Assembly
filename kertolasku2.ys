@@ -1,15 +1,13 @@
 main:
     irmovq pino, %rbp
     irmovq pino, %rsp
-    irmovq $123456789, %r11
-    irmovq $987654321, %r12 # kerrottavat
     irmovq $8, %rdi
     irmovq array, %rsi # alku
     irmovq $1, %rdx
-    irmovq $16, %r13  # count (kuinka monta kertaa << 1)
+    irmovq $32, %r13  # count (kuinka monta kertaa << 1)
 
 loop:
-    irmovq $0x0278, %r8 # loppu
+    irmovq $0x02F8, %r8 # loppu
     mrmovq (%rsi), %rbx # siirretään arraystä arvo rbx
     subq %rdx, %r13
     andq %r11, %rbx # and muistipaikasta ja kerrottavasta
@@ -52,6 +50,22 @@ rrmovq %r13, %r9
 
 .pos 0x200
 array:
+    .quad 0x80000000
+    .quad 0x40000000
+    .quad 0x20000000
+    .quad 0x10000000
+    .quad 0x8000000
+    .quad 0x4000000
+    .quad 0x2000000
+    .quad 0x1000000
+    .quad 0x800000
+    .quad 0x400000
+    .quad 0x200000
+    .quad 0x100000
+    .quad 0x80000
+    .quad 0x40000
+    .quad 0x20000
+    .quad 0x10000
     .quad 0x8000
     .quad 0x4000
     .quad 0x2000
@@ -69,6 +83,6 @@ array:
     .quad 0x2
     .quad 0x1
 
-.pos 0x300
+.pos 0x400
 pino:
 
