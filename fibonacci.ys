@@ -2,10 +2,6 @@
    irmovq array, %r11     # muistipaikka 0x700
    irmovq $3, %r12        # 3
    rmmovq %r12, (%r11)
-   irmovq $5, %r12        # 5
-   rmmovq %r12, 8(%r11)
-   irmovq $8, %r12        # 8
-   rmmovq %r12, 16(%r11)
    irmovq $0, %r12        # loppunolla
    rmmovq %r12, 24(%r11)
 
@@ -16,20 +12,21 @@
 # %rcx = välitulos +4
 # %rdx = neliöjuuren tulos
 # %rdi ja %rsi = kertolaskun luvut
-# pino käytössä vain jotta aliohjelmat toimii
+# tyhjiä r15, r14
 
 main:
    irmovq pino, %rbp
    irmovq pino, %rsp      # pino alustus
-   irmovq $8, %r13        # vakio 8 taulukkoa varten
-   irmvoq $4, %r10        # vakio
+   irmovq $8, %r8         # vakio 8 taulukkoa varten
+   irmovq $1, %r10        # vakio
    irmovq $5, %r9         # vakio
    irmovq $0, %rdi        # aliohjelmalle parametri
    irmovq $0, %rsi        # aliohjelmalle parametri
+   irmovq lookUp, %r13    # lookUp osoite
 
    loop:
       mrmovq (%r11), %rax # otetaan taulukosta luku
-      addq %r13, %r11     # seuraava osoite
+      addq %r8, %r11      # seuraava osoite
       call fibonacci      # onko fibonacci
       irmovq $0, %r12     # vakio 0 looppaamiseen
       subq %rax, %r12     # kun saavutetaan lopetus 0, ohjelma pysähtyy ja rax = 0
@@ -43,40 +40,126 @@ main:
 .pos 0x200
 fibonacci:
    # Ensin +4 ja sen jälkeen -4, jos +4 ei ole fibonacci
-   call lasku             # lasketaan kaavan mukaan 5 * x * x + 4
-   # neliöjuuri rcx
+   call lasku
+   irmovq $7, %rdx        # TEST
    rrmovq %rdx, %rdi
    rrmovq %rdx, %rsi      # kertolasku rdx * rdx
    call kertolasku
    subq %rcx, %rdx        # rdx * rdx == rcx
-   je end
+   jne end
 
-   call lasku             # lasketaan kaavan mukaan 5 * x * x - 4
    # neliöjuuri rbx
    rrmovq %rdx, %rdi
    rrmovq %rdx, %rsi      # kertolasku rdx * rdx
    call kertolasku
    subq %rbx, %rdx        # rdx * rdx == rbx
-   je end
+   jne end
    ret
 
+
 .pos 0x300
-lasku:                    # rcx, rbx = r9 * rax * rax +- r10
+lasku:                    # rcx, rbx = r9 * rax * rax +- r9 - r10
    rrmovq %rax, %rdi      # rax = rdi ja rsi kertolaskuun
-   rrmovq %rax, %rdi
+   rrmovq %rax, %rsi
    call kertolasku
    rrmovq %rdx, %rcx      # siirretään kertolaskun tulos rcx
-   addq %r10, %rcx        # lisätään r10 eli 4
-   subq %r10, %rbx        # vähennetään 4
+   subq %r10, %r9         # 5 - 1 = 4, säästää rekistereitä
+   addq %r9, %rcx         # lisätään r9 eli 4
+   subq %r9, %rbx         # vähennetään 4
+   irmovq $5, %r9         # r9 = 5
    ret
+
 
 .pos 0x350
 kertolasku:
-   #rdx = rsi * rdi
-   ret
+# rdx = kertolaskun tulos
+# rsi ja rdi = kerrottavat luvut
+# r8 = 8
+# r9 = lookUp arvo / array loppu
+# r12 = count = 32
+# r13 = lookUp muistiosoite
 
-.pos 0x400
+    irmovq $32, %r12       # count
+    loop:
+    mrmovq (%r13), %r9     # siirretään arraystä arvo r9
+    subq %r10, %r12        # count - 1
+    andq %rdi, %r9         # and muistipaikasta ja kerrottavasta
+    je ohitus              # jos ollaan 0-bitin kohdalla hypätään ohi
+    irmovq $1, %rdx        # rdx tulos
+    subq %r9, %rdx         # 1 - and tulos, eli onko r9 arvo 1
+    je vali                # jos arvo = 1, lisätään rsi suoraan, ei shiftattuna
+    call kerto             # jos ollaan 1-bitin kohdalla lasketaan
+    pushq %r9              # r9 tässä rsi << n
+    ohitus: 
+    addq %r8, %r13         # kasvatetaan lookUp muistipaikkaa 8
+    irmovq $0x0578, %r9    # lookUp loppu
+    subq %r13, %r9         # ollaanko lookUp lopussa
+    jge loop 
+    irmovq $0, %rdx        # nollataan rdx
+    
+    loop1:
+        popq %r9           
+        addq %r9, %rdx      # tulos rdx
+        rrmovq %rbp, %r12 
+        subq %r8, %r12
+        subq %r8, %r12
+        subq %r8, %r12        # VAIHDA ARRAY
+        subq %rsp, %r12     # tarkistetaan ollaanko pinon lopussa
+        jne loop1
+    irmovq $5, %r9        # r9 = 5
+    ret
+
+   vali:
+      pushq %rsi
+      jmp ohitus
+
+.pos 0x450
 pino:
+
+.pos 0x480
+lookUp:
+   .quad 0x80000000
+   .quad 0x40000000
+   .quad 0x20000000
+   .quad 0x10000000
+   .quad 0x8000000
+   .quad 0x4000000
+   .quad 0x2000000
+   .quad 0x1000000
+   .quad 0x800000
+   .quad 0x400000
+   .quad 0x200000
+   .quad 0x100000
+   .quad 0x80000
+   .quad 0x40000
+   .quad 0x20000
+   .quad 0x10000
+   .quad 0x8000
+   .quad 0x4000
+   .quad 0x2000
+   .quad 0x1000
+   .quad 0x800
+   .quad 0x400
+   .quad 0x200
+   .quad 0x100
+   .quad 0x80
+   .quad 0x40
+   .quad 0x20
+   .quad 0x10
+   .quad 0x8
+   .quad 0x4
+   .quad 0x2
+   .quad 0x1
+
+.pos 0x600
+   kerto:
+   rrmovq %rsi, %r9   # kerrottava
+   rrmovq %r12, %r14  # count -> r10
+      loop2:
+      addq %r9, %r9 # kerrottava << 1
+      subq %r10, %r14  # count > 0 (-1)
+      jg loop2
+      ret
 
 .pos 0x700
 array:

@@ -9,7 +9,7 @@ main:
 loop:
     irmovq $0x02F8, %r8 # loppu
     mrmovq (%rsi), %rbx # siirretään arraystä arvo rbx
-    subq %rdx, %r13
+    subq %rdx, %r13     # count - 1
     andq %r11, %rbx # and muistipaikasta ja kerrottavasta
     je ohitus       # jos ei olla 1 kohdalla hypätään ohi
     irmovq $1, %rax
