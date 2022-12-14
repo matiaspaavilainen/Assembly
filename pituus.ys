@@ -4,7 +4,7 @@ main:
     irmovq $8, %rcx
     irmovq $0, %rdx
     irmovq $0, %rbp
-    irmovq 0x0400, %rsp
+    irmovq $0x0400, %rsp
 
 loop:
     mrmovq (%rsp), %rdx #get value form memorey

@@ -1,69 +1,86 @@
 main:
-    irmovq pino, %rsp    # pino-osoitin
+    irmovq pino, %rsp
     irmovq pino, %rbp
-    irmovq $0, %rcx  # tulos
-    irmovq $16, %r12  # numero
-    irmovq $0x8000, %rax  # bit juttu
-    irmovq $4, %rsi  #jakaja 1
-    irmovq $2, %rdx  # jakaja 2
-    irmovq $1, %r8
-    irmovq $-1, %r9
+    irmovq $0, %rcx        # tulos
+    irmovq $0x10000, %rax  # bit juttu
+    irmovq $1, %r8         # vakio
     
     
-while:  # eka while loop bit shift 2 oikealle
-    call shift
-    subq %r12, %rbx
+while:
+    rrmovq %rax, %rbx  # vertailuun
+    rrmovq %rax, %rdi  # rdi shiftattava luku shiftille 
+    call shift2
+    rrmovq %rdi, %rax  # bit takaisin rax
+    subq %r12, %rbx    # bit > numero
     je while
     
 while1:
-    irmovq $0, %r10 # nolla
-    irmovq $0, %rdi # bit + res
-    addq %rax, %rdi
-    addq %rcx, %rdi
+    irmovq $0, %r10    # nolla
+    irmovq $0, %rsi    # bit + res
+    rrmovq %rax, %rsi  # bit
+    addq %rcx, %rsi    # bit + res
+    rrmovq %rsi, %r9   # vertailu
+    subq %r12, %r9     # tarkistetaan onko num >= res + bit
+    jg ohitus
+    subq %rsi, %r12    # num =- bit + res
+    rrmovq %rcx, %rdi
+    call shift         # res >> 1
+    rrmovq %rdi, %rcx
+    addq %rax, %rcx    # res = res >> 1 + bit
+    jmp bit
     
-    rrmovq %rcx, %r11  # bitshift tulos 1 oikealle
-    loop:
-        addq %r8, %r9
-        subq %rdx, %r11
-        jge loop
-    rrmovq %r9, %rcx
-    subq %r12, %rdi  # tarkistetaan onko num >= tulos + bit
-    jl ohitus
-    subq %rdi, %r12
-    addq %rax, %rcx
 ohitus:
+    rrmovq %rcx, %rdi
+    call shift         # res >> 1
+    rrmovq %rdi, %rcx
+    jmp bit
+    
+bit:
+    rrmovq %rax, %rdi  # shift
     call shift
-    subq %rax, %r10
+    call shift
+    rrmovq %rdi, %rax  # bit takaisin rax
+    subq %rax, %r10    # bit != 0
     jne while1
 
 .pos 0x200
+# stackoverflow
+# Käytännössä left shift niin kauan, että mennään yli intmax -> tulee neg
+# Sopiva määrä leftä lisää ja on shiftattu yksi oikealle
+# Ei lähelläkään nopein mahdollinen, mutta toimii, en keksi parempaa.
 shift:
-    rrmovq %rax, %rbx
-    loop:
-        addq %r8, %r9
-        subq %rsi, %rbx
-        jge loop
-    rrmovq %r9, %rax
-    ret
+    irmovq $0, %r13
+    irmovq $63, %r14
+    
+rshift:                   
+    addq %r13, %r13
+    andq %rdi, %rdi
+    jge MSB_zero
+    xorq %r8, %r13
+
+MSB_zero:
+    addq %rdi, %rdi
+    subq %r8, %r14
+    jne rshift
+    rrmovq %r13, %rdi
+    ret # tulos rdi
+    
+shift2:
+    irmovq $0, %r13
+    irmovq $62, %r14
+    
+rshift:                   
+    addq %r13, %r13
+    andq %rdi, %rdi
+    jge MSB_zero
+    xorq %r8, %r13
+
+MSB_zero:
+    addq %rdi, %rdi
+    subq %r8, %r14
+    jne rshift
+    rrmovq %r13, %rdi
+    ret # tulos rdi
     
 .pos 0x400
 pino:
-
-.pos 0x450
-array:
-    .quad 0xFFFF # ei siirtoa
-    .quad 0xFFFE # shift 1
-    .quad 0xFFFC # shift 2
-    .quad 0xFFF8 # shift 3 jne.
-    .quad 0xFFF0
-    .quad 0xFFE0
-    .quad 0xFFC0
-    .quad 0xFF80
-    .quad 0xFE00
-    .quad 0xFC00
-    .quad 0xF800
-    .quad 0xF000
-    .quad 0xE000
-    .quad 0xC000
-    .quad 0x8000
-    

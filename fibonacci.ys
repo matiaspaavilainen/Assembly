@@ -6,13 +6,12 @@
    rmmovq %r12, 24(%r11)
 
 # Rekisterit r9 - r13 vakioille ja taulukon osoitteille,
-# rbp ja rsp pinolle,
+# rbp ja rsp pinolle
 # %rax = käsiteltävä luku
 # %rbx = välitulos -4
 # %rcx = välitulos +4
 # %rdx = neliöjuuren tulos
 # %rdi ja %rsi = kertolaskun luvut
-# tyhjiä r15, r14
 
 main:
    irmovq pino, %rbp
@@ -22,7 +21,6 @@ main:
    irmovq $5, %r9         # vakio
    irmovq $0, %rdi        # aliohjelmalle parametri
    irmovq $0, %rsi        # aliohjelmalle parametri
-   irmovq lookUp, %r13    # lookUp osoite
 
    loop:
       mrmovq (%r11), %rax # otetaan taulukosta luku
@@ -38,6 +36,8 @@ main:
 
 
 .pos 0x200
+# rbx, rcx tulokset
+# rdx neliöjuuren tulos
 fibonacci:
    # Ensin +4 ja sen jälkeen -4, jos +4 ei ole fibonacci
    call lasku
@@ -78,7 +78,9 @@ kertolasku:
 # r9 = lookUp arvo / array loppu
 # r12 = count = 32
 # r13 = lookUp muistiosoite
-
+# r14 = lookUp tulosten alku
+    irmovq lookUp, %r13    # lookUp osoite
+    irmovq $0x0600, %r14
     irmovq $32, %r12       # count
     loop:
     mrmovq (%r13), %r9     # siirretään arraystä arvo r9
@@ -89,34 +91,46 @@ kertolasku:
     subq %r9, %rdx         # 1 - and tulos, eli onko r9 arvo 1
     je vali                # jos arvo = 1, lisätään rsi suoraan, ei shiftattuna
     call kerto             # jos ollaan 1-bitin kohdalla lasketaan
-    pushq %r9              # r9 tässä rsi << n
+    rmmovq %r9, (%r14)     # r9 tässä rsi << n
+    addq %r8, %r14         # r14 osoite + 8
     ohitus: 
     addq %r8, %r13         # kasvatetaan lookUp muistipaikkaa 8
-    irmovq $0x0578, %r9    # lookUp loppu
+    irmovq $0x05f8, %r9    # lookUp loppu
     subq %r13, %r9         # ollaanko lookUp lopussa
     jge loop 
     irmovq $0, %rdx        # nollataan rdx
     
     loop1:
-        popq %r9           
-        addq %r9, %rdx      # tulos rdx
-        rrmovq %rbp, %r12 
-        subq %r8, %r12
-        subq %r8, %r12
-        subq %r8, %r12        # VAIHDA ARRAY
-        subq %rsp, %r12     # tarkistetaan ollaanko pinon lopussa
-        jne loop1
-    irmovq $5, %r9        # r9 = 5
+        mrmovq (%r14), %r9    # arvo r14 -> r9
+        addq %r9, %rdx        # tulos rdx
+        rrmovq %r14, %r12     # r14 paikka -> r12
+        subq %r8, %r14        # vähennetään 8
+        irmovq $0x0600, %rsi  # välitulosten loppu
+        subq %rsi, %r12       # tarkistetaan ollaanko lopussa
+        jge loop1
+    irmovq $5, %r9            # r9 = 5
     ret
 
-   vali:
-      pushq %rsi
-      jmp ohitus
+    vali:
+        rmmovq %rsi, (%r14)   # ei bit shiftiä
+        addq %r8, %r14
+        jmp ohitus
 
 .pos 0x450
 pino:
 
 .pos 0x480
+   kerto:
+   rrmovq %rsi, %r9   # kerrottava
+   rrmovq %r12, %r14  # count -> r10
+      loop2:
+      addq %r9, %r9    # kerrottava << 1
+      subq %r10, %r14  # count > 0 (-1)
+      jg loop2
+      irmovq $0x0600, %r14
+      ret
+      
+.pos 0x500
 lookUp:
    .quad 0x80000000
    .quad 0x40000000
@@ -150,16 +164,6 @@ lookUp:
    .quad 0x4
    .quad 0x2
    .quad 0x1
-
-.pos 0x600
-   kerto:
-   rrmovq %rsi, %r9   # kerrottava
-   rrmovq %r12, %r14  # count -> r10
-      loop2:
-      addq %r9, %r9 # kerrottava << 1
-      subq %r10, %r14  # count > 0 (-1)
-      jg loop2
-      ret
 
 .pos 0x700
 array:
