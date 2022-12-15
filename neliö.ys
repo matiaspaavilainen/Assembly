@@ -10,7 +10,7 @@ while:
     rrmovq %rax, %rbx  # vertailuun
     rrmovq %rax, %rdi  # rdi shiftattava luku shiftille 
     call shift2
-    rrmovq %rdi, %rax  # bit takaisin rax
+    rrmovq %rdi, %rax  # bit >> 2, takaisin rax
     subq %r12, %rbx    # bit > numero
     je while
     
