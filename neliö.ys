@@ -1,8 +1,9 @@
 main:
     irmovq pino, %rsp
     irmovq pino, %rbp
+    irmovq $16, %r12
     irmovq $0, %rcx        # tulos
-    irmovq $0x10000, %rax  # bit juttu
+    irmovq $0x100000000, %rax  # bit juttu
     irmovq $1, %r8         # vakio
     
     

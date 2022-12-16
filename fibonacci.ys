@@ -1,13 +1,22 @@
-.pos 0
-    irmovq array, %r11     # muistipaikka 0x1000
-    irmovq $3,%r12         # 3
-    rmmovq %r12,(%r11)
-    irmovq $5,%r12         # 5
-    rmmovq %r12,8(%r11)
-    irmovq $2584,%r12      # 8
-    rmmovq %r12,16(%r11)
-    irmovq $0,%r12         # loppunolla
-    rmmovq %r12,24(%r11)
+# TKJ-2022
+# Matias Paavilainen, Y63273889, mpaavila21@oulu.student.fi
+# Pohdinta:
+# Käskyjen määrä: 
+#   Kun testataan numeroa 8: ~ 17000 käskyä
+#   Esimerkkisyöte 3, 5, 8 : ~ 44000 käskyä
+#   Mittaustapa: Autoclicker ~ 73 click/s
+#       Sekuntikellolla aikaa -> kuluneet sekunnit * 73
+#       Simulaattorin step nappi tekee yhden käskyn / click
+#
+#   Pullonkaula bittisiirto oikealle / neliöjuuri
+#   Optimointia: Eri aliohjelmat 1 shift ja 2 shiftille,
+#                ja jos shiftattava on 0, palautetaan 0.
+# Kertolasku toteutettu peasant multiplication menetelmällä
+# En kauheammin tehnyt optimointia, otin suoraan harjoitustehtävävastaukset ja käytin niitä.
+# En osaa sanoa vaikutuksista käskymäärään, koska mittasin käskyt vasta lopuksi.
+# Neliöjuuren bit on rajoittava tekjijä käsiteltävän luvun kokoon. Tällä hetkellä bit = 1 << 32.
+# Maksimi nyt 28657. 46368 ei toimi enää.
+
 
     # rbp ja rsp pinolle
     # %rax = käsiteltävä luku / apumuuttuja
@@ -125,7 +134,7 @@ loopkerto:
     
     call kerto              # jos ollaan 1-bitin kohdalla lasketaan
     
-    rmmovq %r9, (%rax)      # r9 tässä rsi << n
+    rmmovq %r9, (%rax)      # r9 = välitulos talteen
     addq %r8, %rax          # rcx osoite + 8
     
     ohituskerto: 
@@ -180,12 +189,12 @@ neliojuuri:
     # r10 = 1
     # r14 vertailu
     irmovq $0, %rsi
-    irmovq $0x10000000, %rax  # bit 1 << 32
-    
+    irmovq $0x100000000, %rax  # bit 1 << 32
+
 while:
-    rrmovq %rax, %r9          # vertailuun
-    rrmovq %rax, %r12         # rdi shiftattava luku shiftille 
-    call shift2
+    rrmovq %rax, %r9          # vertailu
+    rrmovq %rax, %r12         # rax -> r12
+    call shift2               # r12 >> 1
     
     rrmovq %r12, %rax         # bit takaisin rax
     subq %rdi, %r9            # bit > numero
